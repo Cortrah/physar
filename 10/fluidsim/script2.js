@@ -44,7 +44,6 @@ let capturer;
 
 window.initFluid = function() {
     // const params = { alpha: true, depth: false, stencil: false, antialias: false, preserveDrawingBuffer: false };
-
     // renderer = new THREE.WebGLRenderer( params );
     // renderer.setPixelRatio( window.devicePixelRatio );
     // renderer.setSize( innerWidth, innerHeight );
@@ -54,39 +53,29 @@ window.initFluid = function() {
     // renderer.domElement.style.opacity = "0.1";
     // renderer.domElement.style.left = "0";
     canvas = renderer.domElement;
-
     scene = new THREE.Scene();
-
     camera = new THREE.PerspectiveCamera(45, canvas.width / canvas.height, 0.1, 10);
 
     initFramebuffers();
     initMaterials();
     initMouseCommands();
-
-
-
     // window.recorder = new CanvasRecorder(canvas, 250000000);
     // recorder.start();
-
     // setTimeout(() => {
     //     recorder.stop();
     //     recorder.save('busy_motion.webm');
     // }, 6000);
-
     window.addEventListener("keypress", (e) => {
         if(e.key == "k") {
             multipleSplats(5);
         }
     });
-
     // setTimeout(() => {
     //     multipleSplats(15);
     // }, 500);
-
     animate();
-    // debug();
+    debug();
 }
-
 
 function debug() {
     multipleSplats(5);
@@ -139,8 +128,8 @@ function initFramebuffers () {
     curl       = createFBO      (simRes.width, simRes.height, THREE.NearestFilter);
     pressure   = createDoubleFBO(simRes.width, simRes.height, THREE.NearestFilter);
 
-    window.fluidSimVelocityFBO = velocity; 
-    window.fluidSimDyeFBO      = dye; 
+    window.fluidSimVelocityFBO = velocity;
+    window.fluidSimDyeFBO      = dye;
 }
 function createFBO (w, h, filtering) {
     let rt = new THREE.WebGLRenderTarget(w, h, {
@@ -196,7 +185,6 @@ function createDoubleFBO (w, h, filtering) {
     }
 }
 
-
 let copyProgram;
 let splatProgram;
 let curlProgram;
@@ -209,7 +197,7 @@ let advectionProgram;
 let displayMaterial;
 let quadPlaneMesh;
 function initMaterials() {
-    
+
     copyProgram = new THREE.ShaderMaterial( {
         uniforms: {
             uTexture: { type: "t", value: velocity.read.texture },
@@ -313,13 +301,10 @@ function animate() {
     // if (resizeCanvas())
     //     initFramebuffers();
 
-    updateColors(dt);
     applyInputs();
     // if (!config.PAUSED)
         step(dt);
     render();
-
-
     requestAnimationFrame(animate);
 }
 
@@ -338,7 +323,6 @@ function step(dt) {
     renderer.setRenderTarget(curl.fbo);
     renderer.render(scene, camera);
 
-
     quadPlaneMesh.material = vorticityProgram;
     vorticityProgram.uniforms.uVelocity.value = velocity.read.texture;
     vorticityProgram.uniforms.uCurl.value = curl.texture;
@@ -348,19 +332,16 @@ function step(dt) {
     renderer.render(scene, camera);
     velocity.swap();
 
-
     quadPlaneMesh.material = divergenceProgram;
     divergenceProgram.uniforms.uVelocity.value = velocity.read.texture;
     renderer.setRenderTarget(divergence.fbo);
     renderer.render(scene, camera);
-
 
     quadPlaneMesh.material = clearProgram;
     clearProgram.uniforms.uTexture.value = pressure.read.texture;
     clearProgram.uniforms.value.value = config.PRESSURE;
     renderer.setRenderTarget(pressure.write.fbo);
     renderer.render(scene, camera);
-
 
     quadPlaneMesh.material = pressureProgram;
     pressureProgram.uniforms.uDivergence.value = divergence.texture;
@@ -371,16 +352,12 @@ function step(dt) {
         pressure.swap();
     }
 
-
     quadPlaneMesh.material = gradienSubtractProgram;
     gradienSubtractProgram.uniforms.uPressure.value = pressure.read.texture;
     gradienSubtractProgram.uniforms.uVelocity.value = velocity.read.texture;
     renderer.setRenderTarget(velocity.write.fbo);
     renderer.render(scene, camera);
     velocity.swap();
-
-
-
 
     quadPlaneMesh.material = advectionProgram;
     advectionProgram.uniforms.uVelocity.value = velocity.read.texture;
@@ -390,8 +367,6 @@ function step(dt) {
     renderer.setRenderTarget(velocity.write.fbo);
     renderer.render(scene, camera);
     velocity.swap();
-
-
 
     quadPlaneMesh.material = advectionProgram;
     advectionProgram.uniforms.uVelocity.value = velocity.read.texture;
@@ -415,8 +390,9 @@ function drawDisplay(width, height) {
     renderer.render(scene, camera);
 }
 function splat(x, y, dx, dy, color, pointer, colorMultiplier) {
-    if(!colorMultiplier) colorMultiplier = 1;
+    console.log("splat")
 
+    if(!colorMultiplier) colorMultiplier = 1;
     quadPlaneMesh.material = splatProgram;
     splatProgram.uniforms.uTarget.value = velocity.read.texture;
     splatProgram.uniforms.aspectRatio.value = canvas.width / canvas.height;
@@ -427,7 +403,6 @@ function splat(x, y, dx, dy, color, pointer, colorMultiplier) {
     renderer.render(scene, camera);
     velocity.swap();
 
-
     let colorIntensity = 0.2 * colorMultiplier;
     let c = { r: 1, g: 0.8, b: 0.5 };
     if(pointer.downRight) {
@@ -437,11 +412,11 @@ function splat(x, y, dx, dy, color, pointer, colorMultiplier) {
 
     if(!pointer.downMiddle) {
         splatProgram.uniforms.uTarget.value = dye.read.texture;
-        splatProgram.uniforms.color.value = new THREE.Vector3(
-            /* color.r */  c.r, 
-            /* color.g */  c.g, 
-            /* color.b */  c.b).normalize().multiplyScalar(colorIntensity);
-    
+        // splatProgram.uniforms.color.value = new THREE.Vector3(
+        //     /* color.r */  c.r,
+        //     /* color.g */  c.g,
+        //     /* color.b */  c.b).normalize().multiplyScalar(colorIntensity);
+
         renderer.setRenderTarget(dye.write.fbo);
         renderer.render(scene, camera);
         dye.swap();
@@ -467,16 +442,6 @@ function applyInputs () {
 }
 function multipleSplats (amount) {
     for (let i = 0; i < amount; i++) {
-        // color = new THREE.Vector3(r(), r(), r()).normalize().multiplyScalar(1.5);
-        // color.r = color.x;
-        // color.g = color.y;
-        // color.b = color.z;
-
-        // const color = generateColor();
-        // color.r *= 10.0;
-        // color.g *= 10.0;
-        // color.b *= 10.0;
-
         let color = { r: 100, g: 100, b: 100 };
 
         const x = Math.random();
@@ -486,7 +451,6 @@ function multipleSplats (amount) {
         splat(x, y, dx, dy, color, { downRight: Math.random() > 0.5 }, 10);
     }
 }
-
 
 function initMouseCommands() {
     window.addEventListener('mousedown', e => {
@@ -506,7 +470,7 @@ function initMouseCommands() {
             pointer = new pointerPrototype();
         updatePointerDownData(pointer, -1, posX, posY, e.which == 3, e.which == 2);
     });
-    
+
     window.addEventListener('mousemove', e => {
         let pointer = pointers[0];
         if (!pointer.down) return;
@@ -522,7 +486,7 @@ function initMouseCommands() {
         let posY = scaleByPixelRatio(e.touches[0].clientY);
         updatePointerMoveData(pointer, posX, posY);
     });
-    
+
     window.addEventListener('mouseup', () => {
         updatePointerUpData(pointers[0]);
     });
@@ -550,7 +514,7 @@ function updatePointerDownData (pointer, id, posX, posY, rightKey, middleKey) {
     pointer.prevTexcoordY = pointer.texcoordY;
     pointer.deltaX = 0;
     pointer.deltaY = 0;
-    pointer.color = generateColor(ciclingHue);
+    pointer.color = { r: 100, g: 100, b: 100 };
 }
 
 function updatePointerMoveData (pointer, posX, posY) {
@@ -567,27 +531,6 @@ function updatePointerUpData (pointer) {
     pointer.down = false;
 }
 
-let colorUpdateTimer = 0;
-let ciclingHue = 0;
-function updateColors (dt) {
-    if (!config.COLORFUL) return;
-
-    ciclingHue += dt * config.COLOR_UPDATE_SPEED * 0.03;
-    ciclingHue = ciclingHue % 360;
-    colorUpdateTimer += dt * config.COLOR_UPDATE_SPEED;
-    // if (colorUpdateTimer >= 1) {
-        colorUpdateTimer = wrap(colorUpdateTimer, 0, 1);
-        pointers.forEach(p => {
-            p.color = generateColor(ciclingHue);
-        });
-    // }
-}
-function wrap (value, min, max) {
-    let range = max - min;
-    if (range == 0) return min;
-    return (value - min) % range + min;
-}
-
 function correctDeltaX (delta) {
     let aspectRatio = canvas.width / canvas.height;
     if (aspectRatio < 1) delta *= aspectRatio;
@@ -599,37 +542,4 @@ function correctDeltaY (delta) {
     if (aspectRatio > 1) delta /= aspectRatio;
     return delta;
 }
-
-function generateColor (hue) {
-    let c = HSVtoRGB(hue || Math.random(), 1.0, 1.0);
-    c.r *= 0.15;
-    c.g *= 0.15;
-    c.b *= 0.15;
-    return c;
-}
-
-function HSVtoRGB (h, s, v) {
-    let r, g, b, i, f, p, q, t;
-    i = Math.floor(h * 6);
-    f = h * 6 - i;
-    p = v * (1 - s);
-    q = v * (1 - f * s);
-    t = v * (1 - (1 - f) * s);
-
-    switch (i % 6) {
-        case 0: r = v, g = t, b = p; break;
-        case 1: r = q, g = v, b = p; break;
-        case 2: r = p, g = v, b = t; break;
-        case 3: r = p, g = q, b = v; break;
-        case 4: r = t, g = p, b = v; break;
-        case 5: r = v, g = p, b = q; break;
-    }
-
-    return {
-        r,
-        g,
-        b
-    };
-}
-
 })();
