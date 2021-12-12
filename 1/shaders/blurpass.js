@@ -2,21 +2,14 @@ let blurDecayVert = `
 varying vec2 vUv;
 
 void main() {
-
     vUv = position.xy * 0.5 + 0.5;
-
     gl_Position = vec4(position.xy, 0.0, 1.0);
-}
-`;
-
+}`;
 
 let blurDecayFrag = `
 uniform sampler2D uTrailMap;
 uniform vec2 uTexelSize;
-
 varying vec2 vUv;
-
-
 
 // clamping is necessary since WebGL doesn't support power of two textures...
 // clamping is necessary since WebGL doesn't support power of two textures...
@@ -27,10 +20,8 @@ vec2 clampuv(vec2 uv) {
     
     if(uv.y < 0.0) uv.y += 1.0;
     if(uv.y > 1.0) uv.y -= 1.0;
-
     return uv;
 }
-
 
 void main() {
     vec2 vertTexCoord = vUv;
@@ -69,12 +60,8 @@ void main() {
                 m * col3 + m * col4 + m * col5 +
                 m * col6 + m * col7 + m * col8) / 1.0; 
 
-
     const float decay = 0.975;
-    
-
     gl_FragColor = vec4(sum.rgb * decay, 1.0);
-}
-`;
+}`;
 
 

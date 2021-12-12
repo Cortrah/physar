@@ -54,35 +54,12 @@ window.initFluid = function() {
     // renderer.domElement.style.opacity = "0.1";
     // renderer.domElement.style.left = "0";
     canvas = renderer.domElement;
-
     scene = new THREE.Scene();
-
     camera = new THREE.PerspectiveCamera(45, canvas.width / canvas.height, 0.1, 10);
 
     initFramebuffers();
     initMaterials();
     initMouseCommands();
-
-
-
-    // window.recorder = new CanvasRecorder(canvas, 250000000);
-    // recorder.start();
-
-    // setTimeout(() => {
-    //     recorder.stop();
-    //     recorder.save('busy_motion.webm');
-    // }, 6000);
-
-    // window.addEventListener("keypress", (e) => {
-    //     if(e.key == "k") {
-    //         multipleSplats(5);
-    //     }
-    // });
-
-    // setTimeout(() => {
-    //     multipleSplats(15);
-    // }, 500);
-
     animate();
     // debug();
 }
@@ -139,9 +116,10 @@ function initFramebuffers () {
     curl       = createFBO      (simRes.width, simRes.height, THREE.NearestFilter);
     pressure   = createDoubleFBO(simRes.width, simRes.height, THREE.NearestFilter);
 
-    window.fluidSimVelocityFBO = velocity; 
-    window.fluidSimDyeFBO      = dye; 
+    window.fluidSimVelocityFBO = velocity;
+    window.fluidSimDyeFBO      = dye;
 }
+
 function createFBO (w, h, filtering) {
     let rt = new THREE.WebGLRenderTarget(w, h, {
         type: THREE.FloatType,
@@ -165,6 +143,7 @@ function createFBO (w, h, filtering) {
         texelSizeY : texelSizeY,
     };
 }
+
 function createDoubleFBO (w, h, filtering) {
     let fbo1 = createFBO(w, h, filtering);
     let fbo2 = createFBO(w, h, filtering);
@@ -196,7 +175,6 @@ function createDoubleFBO (w, h, filtering) {
     }
 }
 
-
 let copyProgram;
 let splatProgram;
 let curlProgram;
@@ -209,7 +187,7 @@ let advectionProgram;
 let displayMaterial;
 let quadPlaneMesh;
 function initMaterials() {
-    
+
     copyProgram = new THREE.ShaderMaterial( {
         uniforms: {
             uTexture: { type: "t", value: velocity.read.texture },
@@ -310,16 +288,10 @@ function initMaterials() {
 
 function animate() {
     const dt = calcDeltaTime();
-    // if (resizeCanvas())
-    //     initFramebuffers();
-
     updateColors(dt);
     applyInputs();
-    // if (!config.PAUSED)
         step(dt);
     render();
-
-
     requestAnimationFrame(animate);
 }
 
@@ -338,7 +310,6 @@ function step(dt) {
     renderer.setRenderTarget(curl.fbo);
     renderer.render(scene, camera);
 
-
     quadPlaneMesh.material = vorticityProgram;
     vorticityProgram.uniforms.uVelocity.value = velocity.read.texture;
     vorticityProgram.uniforms.uCurl.value = curl.texture;
@@ -348,19 +319,16 @@ function step(dt) {
     renderer.render(scene, camera);
     velocity.swap();
 
-
     quadPlaneMesh.material = divergenceProgram;
     divergenceProgram.uniforms.uVelocity.value = velocity.read.texture;
     renderer.setRenderTarget(divergence.fbo);
     renderer.render(scene, camera);
-
 
     quadPlaneMesh.material = clearProgram;
     clearProgram.uniforms.uTexture.value = pressure.read.texture;
     clearProgram.uniforms.value.value = config.PRESSURE;
     renderer.setRenderTarget(pressure.write.fbo);
     renderer.render(scene, camera);
-
 
     quadPlaneMesh.material = pressureProgram;
     pressureProgram.uniforms.uDivergence.value = divergence.texture;
@@ -371,16 +339,12 @@ function step(dt) {
         pressure.swap();
     }
 
-
     quadPlaneMesh.material = gradienSubtractProgram;
     gradienSubtractProgram.uniforms.uPressure.value = pressure.read.texture;
     gradienSubtractProgram.uniforms.uVelocity.value = velocity.read.texture;
     renderer.setRenderTarget(velocity.write.fbo);
     renderer.render(scene, camera);
     velocity.swap();
-
-
-
 
     quadPlaneMesh.material = advectionProgram;
     advectionProgram.uniforms.uVelocity.value = velocity.read.texture;
@@ -391,8 +355,6 @@ function step(dt) {
     renderer.render(scene, camera);
     velocity.swap();
 
-
-
     quadPlaneMesh.material = advectionProgram;
     advectionProgram.uniforms.uVelocity.value = velocity.read.texture;
     advectionProgram.uniforms.uSource.value   = dye.read.texture;
@@ -402,9 +364,11 @@ function step(dt) {
     renderer.render(scene, camera);
     dye.swap();
 }
+
 function render() {
     drawDisplay(innerWidth, innerHeight);
 }
+
 function drawDisplay(width, height) {
     renderer.setRenderTarget(null);
     quadPlaneMesh.material = displayMaterial;
@@ -414,6 +378,7 @@ function drawDisplay(width, height) {
     displayMaterial.uniforms.uCurl.value = curl.texture;
     renderer.render(scene, camera);
 }
+
 function splat(x, y, dx, dy, color, pointer, colorMultiplier) {
     if(!colorMultiplier) colorMultiplier = 1;
 
@@ -427,7 +392,6 @@ function splat(x, y, dx, dy, color, pointer, colorMultiplier) {
     renderer.render(scene, camera);
     velocity.swap();
 
-
     let colorIntensity = 0.2 * colorMultiplier;
     let c = { r: 1, g: 0.8, b: 0.5 };
     if(pointer.downRight) {
@@ -438,21 +402,20 @@ function splat(x, y, dx, dy, color, pointer, colorMultiplier) {
     if(!pointer.downMiddle) {
         splatProgram.uniforms.uTarget.value = dye.read.texture;
         splatProgram.uniforms.color.value = new THREE.Vector3(
-            /* color.r */  c.r, 
-            /* color.g */  c.g, 
-            /* color.b */  c.b).normalize().multiplyScalar(colorIntensity);
-    
+            c.r, c.g, c.b).normalize().multiplyScalar(colorIntensity);
         renderer.setRenderTarget(dye.write.fbo);
         renderer.render(scene, camera);
         dye.swap();
     }
 }
+
 function correctRadius (radius) {
     let aspectRatio = canvas.width / canvas.height;
     if (aspectRatio > 1)
         radius *= aspectRatio;
     return radius;
 }
+
 function r() {
     return Math.random();
 }
@@ -465,20 +428,10 @@ function applyInputs () {
         }
     });
 }
+
 function multipleSplats (amount) {
     for (let i = 0; i < amount; i++) {
-        // color = new THREE.Vector3(r(), r(), r()).normalize().multiplyScalar(1.5);
-        // color.r = color.x;
-        // color.g = color.y;
-        // color.b = color.z;
-
-        // const color = generateColor();
-        // color.r *= 10.0;
-        // color.g *= 10.0;
-        // color.b *= 10.0;
-
         let color = { r: 100, g: 100, b: 100 };
-
         const x = Math.random();
         const y = Math.random();
         const dx = 2700 * (Math.random() - 0.5);
@@ -487,7 +440,6 @@ function multipleSplats (amount) {
     }
 }
 
-
 function initMouseCommands() {
     window.addEventListener('mousedown', e => {
         let posX = scaleByPixelRatio(e.clientX);
@@ -495,6 +447,7 @@ function initMouseCommands() {
         let pointer = pointers.find(p => p.id == -1);
         if (pointer == null)
             pointer = new pointerPrototype();
+        console.log("Mouse " + posX + " " + posY )
         updatePointerDownData(pointer, -1, posX, posY, e.which == 3, e.which == 2);
     });
 
@@ -504,15 +457,17 @@ function initMouseCommands() {
         let pointer = pointers.find(p => p.id == -1);
         if (pointer == null)
             pointer = new pointerPrototype();
+        console.log("Touch " + posX + " " + posY )
         updatePointerDownData(pointer, -1, posX, posY, e.which == 3, e.which == 2);
     });
-    
+
     window.addEventListener('mousemove', e => {
         let pointer = pointers[0];
         if (!pointer.down) return;
         let posX = scaleByPixelRatio(e.clientX);
         let posY = scaleByPixelRatio(e.clientY);
         updatePointerMoveData(pointer, posX, posY);
+        console.log("Move " + posX + " " + posY )
     });
 
     window.addEventListener('touchmove', e => {
@@ -522,11 +477,13 @@ function initMouseCommands() {
         let posY = scaleByPixelRatio(e.touches[0].clientY);
         updatePointerMoveData(pointer, posX, posY);
     });
-    
+
     window.addEventListener('mouseup', () => {
+        console.log('up')
         updatePointerUpData(pointers[0]);
     });
 }
+
 function splatPointer (pointer) {
     let dx = pointer.deltaX * config.SPLAT_FORCE;
     let dy = pointer.deltaY * config.SPLAT_FORCE;
@@ -538,6 +495,7 @@ function scaleByPixelRatio (input) {
     let pixelRatio = window.devicePixelRatio || 1;
     return Math.floor(input * pixelRatio);
 }
+
 function updatePointerDownData (pointer, id, posX, posY, rightKey, middleKey) {
     pointer.id = id;
     pointer.down = true;
@@ -569,6 +527,7 @@ function updatePointerUpData (pointer) {
 
 let colorUpdateTimer = 0;
 let ciclingHue = 0;
+
 function updateColors (dt) {
     if (!config.COLORFUL) return;
 
@@ -582,6 +541,7 @@ function updateColors (dt) {
         });
     // }
 }
+
 function wrap (value, min, max) {
     let range = max - min;
     if (range == 0) return min;

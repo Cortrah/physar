@@ -17,13 +17,11 @@ void main() {
 
     gl_PointSize = 1.0;
     gl_Position = vec4(trailMapUv * 2.0 - 1.0, 0.0, 1.0);
-}
-`;
+}`;
 
 let depositFrag = `
 void main() {
     gl_FragColor = vec4(vec3(1.0), 1.0);
-}
-`;
+}`;
 
 

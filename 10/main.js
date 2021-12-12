@@ -32,7 +32,6 @@ function init() {
     initParticlesGeometry();
     initParticlesTexture();
     initTrailTexture();
-
     animate();
     debugView();
 }
@@ -158,9 +157,9 @@ function initMaterials() {
         blendDst: THREE.OneFactor,
     });
 
-    quadPlane = new THREE.PlaneBufferGeometry(2, 2);
-    quadPlaneMesh = new THREE.Mesh(quadPlane, senseAndMovePass);
-    scene.add(quadPlaneMesh);
+    //quadPlane = new THREE.PlaneBufferGeometry(2, 2);
+    //quadPlaneMesh = new THREE.Mesh(quadPlane, senseAndMovePass);
+    //scene.add(quadPlaneMesh);
 }
 
 function animate(now) {
@@ -262,22 +261,18 @@ function initParticlesGeometry() {
     // vertices because each vertex needs to appear once per triangle.
     var vertices = [];
     var verticesPos = [];
-
     for(let i = 0; i < particlesTextureSize; i++) {
         for(let j = 0; j < particlesTextureSize; j++) {
             let px = i;
             let py = j;
-
             vertices.push(px, py);
         }
     }
-
     for(let i = 0; i < particlesTextureSize; i++) {
         for(let j = 0; j < particlesTextureSize; j++) {
             verticesPos.push(i, j, 0);
         }
     }
-
     // itemSize = 3 because there are 3 values (components) per vertex
     geometry.setAttribute( 'position', new THREE.BufferAttribute( new Float32Array(verticesPos), 3 ) );
     geometry.setAttribute( 'aDataPos', new THREE.BufferAttribute( new Float32Array(vertices), 2 ) );

@@ -1,5 +1,4 @@
 (function() {
-
 window.addEventListener("load", init);
 
 // let renderer;
@@ -8,12 +7,12 @@ let scene;
 let particlesScene;
 let camera;
 function init() {
-    window.renderer = new THREE.WebGLRenderer({ 
-        alpha: false, 
-        depth: false, 
-        stencil: false, 
-        antialias: true, 
-        preserveDrawingBuffer: true 
+    window.renderer = new THREE.WebGLRenderer({
+        alpha: false,
+        depth: false,
+        stencil: false,
+        antialias: true,
+        preserveDrawingBuffer: true
     });
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( innerWidth, innerHeight );
@@ -22,25 +21,17 @@ function init() {
 
     document.body.appendChild(renderer.domElement);
     canvas = renderer.domElement;
-
     scene = new THREE.Scene();
     particlesScene = new THREE.Scene();
-    
     camera = new THREE.PerspectiveCamera(45, canvas.width / canvas.height, 0.1, 10);
-
-
     window.initFluid();
 
-
-
     window.addEventListener("keypress", (e) => {
-
-        // 25.5   21.5 
-
+        // 25.5   21.5
         switch(e.key) {
             case "g":
                 window.nowTarget = 6.5;
-                break;            
+                break;
             case "h":
                 window.nowTarget = 7.5;
                 break;
@@ -49,27 +40,21 @@ function init() {
                 break;
             case "k":
                 window.nowTarget = 21.5;
-                break;            
+                break;
             case "l":
                 // window.nowTarget = 25.5;
                 window.nowTarget = 23;
                 break;
-            case "f" : 
+            case "f" :
                 window.nowTarget = 11;
                 break;
         }
     });
-
-
-
     initMaterials();
     initParticlesGeometry();
     initParticlesTexture();
-    // initTrailTexture();
-
     animate(0);
     // debugView();
-
 }
 
 function createDoubleFBO (w, h, filtering) {
@@ -124,10 +109,9 @@ let canvwidth = innerWidth;
 let canvheight = innerHeight;
 function initMaterials() {
 
-    particlesPosDir = createDoubleFBO(particlesTextureSize, particlesTextureSize, THREE.LinearFilter); 
-    trailMap        = createDoubleFBO(innerWidth, innerHeight, THREE.LinearFilter); 
+    particlesPosDir = createDoubleFBO(particlesTextureSize, particlesTextureSize, THREE.LinearFilter);
+    trailMap        = createDoubleFBO(innerWidth, innerHeight, THREE.LinearFilter);
 
-    
     senseAndMovePass = new THREE.ShaderMaterial({
         uniforms: {
             uTexelSize:       { value: 1 / particlesTextureSize },
@@ -138,7 +122,7 @@ function initMaterials() {
             uTime:            { value: 0.0 },
             dt:               { value: 0.0 },
         },
-        vertexShader: particlesVert, 
+        vertexShader: particlesVert,
         fragmentShader: particlesFrag,
     });
 
@@ -148,15 +132,14 @@ function initMaterials() {
             uScreenSize:      { value: new THREE.Vector2(innerWidth, innerHeight) },
             uParticlesPosDir: { type: "t", value: particlesPosDir.read.texture },
         },
-        vertexShader: depositVert, 
+        vertexShader: depositVert,
         fragmentShader: depositFrag,
 
         blending: THREE.CustomBlending,
-        blendEquation: THREE.AddEquation, 
-        blendSrc: THREE.OneFactor, 
-        blendDst: THREE.OneFactor, 
+        blendEquation: THREE.AddEquation,
+        blendSrc: THREE.OneFactor,
+        blendDst: THREE.OneFactor,
     });
-
 
     blurDecayPass = new THREE.ShaderMaterial( {
         uniforms: {
@@ -165,7 +148,7 @@ function initMaterials() {
             uFluidDye:   { type: "t", value: null },
             dt:               { value: 0.0 },
         },
-        vertexShader: blurDecayVert, 
+        vertexShader: blurDecayVert,
         fragmentShader: blurDecayFrag,
     });
 
@@ -176,16 +159,15 @@ function initMaterials() {
             uFluidDye:        { type: "t", value: null },
             dt:               { value: 0.0 },
         },
-        vertexShader: displayVert, 
+        vertexShader: displayVert,
         fragmentShader: displayFrag,
     });
-
 
     splatTextureMaterial = new THREE.ShaderMaterial( {
         uniforms: {
             uTexture: { type: "t", value: null },
         },
-        vertexShader: splatTextureVert, 
+        vertexShader: splatTextureVert,
         fragmentShader: splatTextureFrag,
     });
 
@@ -193,17 +175,14 @@ function initMaterials() {
         uniforms: {
             uTexture: { type: "t", value: null },
         },
-        vertexShader: splatDyeTextureVert, 
+        vertexShader: splatDyeTextureVert,
         fragmentShader: splatDyeTextureFrag,
 
         blending: THREE.CustomBlending,
-        blendEquation: THREE.AddEquation, 
-        blendSrc: THREE.OneFactor, 
-        blendDst: THREE.OneFactor, 
+        blendEquation: THREE.AddEquation,
+        blendSrc: THREE.OneFactor,
+        blendDst: THREE.OneFactor,
     });
-
-
-
     quadPlane = new THREE.PlaneBufferGeometry(2, 2);
     quadPlaneMesh = new THREE.Mesh(quadPlane, senseAndMovePass);
     scene.add(quadPlaneMesh);
@@ -212,9 +191,7 @@ function initMaterials() {
 function animate(now) {
     const dt = calcDeltaTime();
     now *= 0.001;
-
     step(dt, now);
-
     requestAnimationFrame(animate);
 }
 
@@ -232,12 +209,8 @@ window.nowTarget = 6.5;
 let count = 0;
 // function step(dt, now) {
 function step(dt) {
-   
     count++;
-
     window.now = window.now * 0.95 + window.nowTarget * 0.05;
-
-
     // ********* sense step - updates the pos/dir framebuffer ***********
     particlesMesh.material = senseAndMovePass;
     senseAndMovePass.uniforms.dt.value               = dt;
@@ -245,20 +218,16 @@ function step(dt) {
     senseAndMovePass.uniforms.uTrailMap.value        = trailMap.read.texture;
     senseAndMovePass.uniforms.uFluidVelocity.value   = window.fluidSimVelocityFBO.read.texture;
     senseAndMovePass.uniforms.uTime.value            = now;
- 
+
     renderer.setRenderTarget(particlesPosDir.write);
     renderer.clear();
     renderer.render(particlesScene, camera);
     particlesPosDir.swap();
     // ********* sense step - updates the pos/dir framebuffer - END ***********
-
-
-
-
     // ********* deposit step - updates the trailmap framebuffer ***********
     particlesMesh.material = depositPass;
     depositPass.uniforms.uParticlesPosDir.value = particlesPosDir.read.texture;
- 
+
     renderer.setRenderTarget(trailMap.write);
     renderer.render(particlesScene, camera);
     // trailMap.swap();
@@ -270,25 +239,16 @@ function step(dt) {
 
     trailMap.swap();
     // ********* deposit step - updates the trailmap framebuffer - END ***********
- 
-
-
-
-
-
     // // ********* display pass ***********
     // quadPlaneMesh.material = displayPass;
     // displayPass.uniforms.dt.value               = dt;
     // displayPass.uniforms.uFluidVelocity.value   = window.fluidSimVelocityFBO.read.texture;//;trailMap.read.texture;
     // displayPass.uniforms.uTrailMap.value        = trailMap.read.texture;
- 
+
     // renderer.setRenderTarget(null);
     // renderer.clear();
     // renderer.render(scene, camera);
     // // ********* display pass - END ***********
-
-
-
     let blurPasses = 1;
     for(let i = 0; i < blurPasses; i++) {
         // ********* blur + decay step - updates the trailmap framebuffer ***********
@@ -296,7 +256,7 @@ function step(dt) {
         blurDecayPass.uniforms.dt.value               = dt;
         blurDecayPass.uniforms.uTrailMap.value        = trailMap.read.texture;
         blurDecayPass.uniforms.uFluidDye.value   = window.fluidSimDyeFBO.read.texture;
-         
+
         renderer.setRenderTarget(trailMap.write);
         renderer.clear();
         renderer.render(scene, camera);
@@ -305,25 +265,17 @@ function step(dt) {
        // ********* blur + decay step - updates the trailmap framebuffer - END ***********
     }
 
-
-
-    
-
     // ********* display pass ***********
     quadPlaneMesh.material = displayPass;
     displayPass.uniforms.dt.value               = dt;
     displayPass.uniforms.uFluidVelocity.value   = window.fluidSimVelocityFBO.read.texture;//;trailMap.read.texture;
     displayPass.uniforms.uFluidDye.value        = window.fluidSimDyeFBO.read.texture;//;trailMap.read.texture;
     displayPass.uniforms.uTrailMap.value        = trailMap.write.texture;
- 
+
     renderer.setRenderTarget(null);
     renderer.clear();
     renderer.render(scene, camera);
     // ********* display pass - END ***********
-
-
-
-
 
     // make write and read trailmap equals
     splatTextureMaterial.uniforms.uTexture.value = trailMap.write.texture;
@@ -332,26 +284,16 @@ function step(dt) {
     renderer.clear();
     renderer.render(scene, camera);
 
-
-
-
     // // ********* display pass ***********
     // quadPlaneMesh.material = displayPass;
     // displayPass.uniforms.dt.value               = dt;
     // displayPass.uniforms.uFluidVelocity.value   = window.fluidSimVelocityFBO.read.texture;//;trailMap.read.texture;
     // displayPass.uniforms.uTrailMap.value        = trailMap.read.texture;
- 
     // renderer.setRenderTarget(null);
     // renderer.clear();
     // renderer.render(scene, camera);
     // // ********* display pass - END ***********
-
-
-
-
 }
-
-
 
 function initParticlesGeometry() {
     var geometry = new THREE.BufferGeometry();
@@ -364,7 +306,6 @@ function initParticlesGeometry() {
         for(let j = 0; j < particlesTextureSize; j++) {
             let px = i;
             let py = j;
-
             vertices.push(px, py);
         }
     }
@@ -374,7 +315,6 @@ function initParticlesGeometry() {
             verticesPos.push(i, j, 0);
         }
     }
-
     // itemSize = 3 because there are 3 values (components) per vertex
     geometry.setAttribute( 'position', new THREE.BufferAttribute( new Float32Array(verticesPos), 3 ) );
     geometry.setAttribute( 'aDataPos', new THREE.BufferAttribute( new Float32Array(vertices), 2 ) );
@@ -386,27 +326,14 @@ function initParticlesGeometry() {
 function initParticlesTexture() {
     let amount = particlesTextureSize * particlesTextureSize;
     let array = new Float32Array(4 * amount);
-
     let padding = 50;
-
     for(let i = 0; i < amount * 4; i += 4) {
-
         let p  = new THREE.Vector2(
             Math.random() * (innerWidth - padding * 2) + padding,
-            Math.random() * (innerHeight - padding * 2) + padding, 
+            Math.random() * (innerHeight - padding * 2) + padding,
         );
-
-        // let p  = new THREE.Vector2(
-        //     Math.random() * 2 - 1,
-        //     Math.random() * 2 - 1, 
-        // ).normalize().multiplyScalar(Math.random() * 450).add(new THREE.Vector2(innerWidth * 0.5, innerHeight * 0.5));
-        
         let cp = new THREE.Vector2(innerWidth * 0.5, innerHeight * 0.5);
-
-        // let v2 = new THREE.Vector2(Math.random() * 2 - 1, Math.random() * 2 - 1).normalize();
         let v2 = p.clone().sub(cp).normalize();
-
-
         array[i + 0] = p.x;
         array[i + 1] = p.y;
         array[i + 2] = v2.x;
@@ -415,19 +342,15 @@ function initParticlesTexture() {
 
     let dataTex = new THREE.DataTexture(
         array,
-        particlesTextureSize, 
         particlesTextureSize,
-        THREE.RGBAFormat, 
+        particlesTextureSize,
+        THREE.RGBAFormat,
         THREE.FloatType
     );
-
-    
     splatTextureMaterial.uniforms.uTexture.value = dataTex;
     quadPlaneMesh.material = splatTextureMaterial;
-
     renderer.setRenderTarget(particlesPosDir.read);
     renderer.render(scene, camera);
-    
     renderer.setRenderTarget(particlesPosDir.write);
     renderer.render(scene, camera);
 }
@@ -436,27 +359,16 @@ function initTrailTexture() {
     let tsize = 1024;
     let amount = tsize * tsize;
     let array = new Float32Array(4 * amount);
-
     let padding = 50;
 
     for(let i = 0; i < amount * 4; i += 4) {
-
-        // let p  = new THREE.Vector2(
-        //     Math.random() * (innerWidth - padding * 2) + padding,
-        //     Math.random() * (innerHeight - padding * 2) + padding, 
-        // );
-
         let p  = new THREE.Vector2(
             Math.random() * 2 - 1,
-            Math.random() * 2 - 1, 
+            Math.random() * 2 - 1,
         ).normalize().multiplyScalar(Math.random() * 300).add(new THREE.Vector2(innerWidth * 0.5, innerHeight * 0.5));
-        
         let cp = new THREE.Vector2(innerWidth * 0.5, innerHeight * 0.5);
-
         // let v2 = new THREE.Vector2(Math.random() * 2 - 1, Math.random() * 2 - 1).normalize();
         let v2 = p.clone().sub(cp).normalize();
-
-
         array[i + 0] = p.x % 20 < 10 ? 50 : 0;
         array[i + 1] = p.x % 20 < 10 ? 50 : 0;
         array[i + 2] = 0;//v2.x;
@@ -465,91 +377,65 @@ function initTrailTexture() {
 
     let dataTex = new THREE.DataTexture(
         array,
-        tsize, 
         tsize,
-        THREE.RGBAFormat, 
+        tsize,
+        THREE.RGBAFormat,
         THREE.FloatType
     );
-    
     splatTextureMaterial.uniforms.uTexture.value = dataTex;
     quadPlaneMesh.material = splatTextureMaterial;
-
     renderer.setRenderTarget(trailMap.read);
     renderer.render(scene, camera);
-
     renderer.setRenderTarget(trailMap.write);
     renderer.render(scene, camera);
 }
 
-
-
-
-
-
-
 function debugView() {
     const dt = calcDeltaTime();
-
-
-
-
     // ********* sense step - updates the pos/dir framebuffer ***********
     particlesMesh.material = senseAndMovePass;
     senseAndMovePass.uniforms.dt.value               = dt;
     senseAndMovePass.uniforms.uParticlesPosDir.value = particlesPosDir.read.texture;
     senseAndMovePass.uniforms.uTrailMap.value        = trailMap.read.texture;
- 
+
     renderer.setRenderTarget(particlesPosDir.write);
     renderer.render(particlesScene, camera);
     particlesPosDir.swap();
     // ********* sense step - updates the pos/dir framebuffer - END ***********
-
-
-
     // ********* deposit step - updates the trailmap framebuffer ***********
     particlesMesh.material = depositPass;
     depositPass.uniforms.uParticlesPosDir.value = particlesPosDir.read.texture;
- 
+
     renderer.setRenderTarget(trailMap.write);
     renderer.render(particlesScene, camera);
     trailMap.swap();
     // ********* deposit step - updates the trailmap framebuffer - END ***********
- 
-
-
- 
     for(let i = 0; i < 20; i++) {
        // ********* blur + decay step - updates the trailmap framebuffer ***********
        quadPlaneMesh.material = blurDecayPass;
        blurDecayPass.uniforms.dt.value               = dt;
        blurDecayPass.uniforms.uTrailMap.value        = trailMap.read.texture;
-        
+
        renderer.setRenderTarget(trailMap.write);
        renderer.render(scene, camera);
        trailMap.swap();
        // ********* blur + decay step - updates the trailmap framebuffer - END ***********
     }
-
-
-    
     // // ********* debug pass ***********
     // quadPlaneMesh.material = displayPass;
     // displayPass.uniforms.dt.value               = dt;
     // displayPass.uniforms.uTrailMap.value        = trailMap.read.texture;
-   
+
     // renderer.setRenderTarget(null);
     // renderer.render(scene, camera);
     // // ********* debug pass - END ***********
     // return;
-      
 
- 
- 
     // ********* display pass ***********
     quadPlaneMesh.material = displayPass;
     displayPass.uniforms.dt.value               = dt;
     displayPass.uniforms.uTrailMap.value        = trailMap.read.texture;
- 
+
     renderer.setRenderTarget(null);
     renderer.render(scene, camera);
     // ********* display pass - END ***********
